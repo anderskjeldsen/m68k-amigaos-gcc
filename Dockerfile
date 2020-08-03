@@ -1,26 +1,45 @@
-FROM debian:10.4-slim AS builder
+FROM amigadev/docker-base:latest
+WORKDIR /root
+COPY ./ ./
 
-RUN echo deb http://deb.debian.org/debian/ buster main >/etc/apt/sources.list &&\
- echo deb-src http://deb.debian.org/debian/ buster main >>/etc/apt/sources.list &&\
- echo deb http://security.debian.org/debian-security buster/updates main >>/etc/apt/sources.list &&\
- echo deb-src http://security.debian.org/debian-security buster/updates main >>/etc/apt/sources.list &&\
- echo deb http://deb.debian.org/debian/ buster-updates main >>/etc/apt/sources.list &&\
- echo deb-src http://deb.debian.org/debian/ buster-updates main >>/etc/apt/sources.list
+RUN export DEBIAN_FRONTEND=noninteractive && \
+    apt update && \
+    apt install -y lhasa && \
+    rm -rf /var/lib/apt/lists/* && \
+    make update && \
+    make -j $(nproc) all && \
+    make -j $(nproc) sdk=ahi && \
+    make -j $(nproc) sdk=camd && \
+    make -j $(nproc) sdk=cgx && \
+    make -j $(nproc) sdk=guigfx && \
+    make -j $(nproc) sdk=mui && \
+    make -j $(nproc) sdk=mcc_betterstring && \
+    make -j $(nproc) sdk=mcc_guigfx && \
+    make -j $(nproc) sdk=mcc_nlist && \
+    make -j $(nproc) sdk=mcc_texteditor && \
+    make -j $(nproc) sdk=mcc_thebar && \
+    make -j $(nproc) sdk=render && \
+    make -j $(nproc) sdk=warp3d && \
+    cd / && \
+    rm -rf /root/amiga-gcc && \
+    apt-get purge -y \
+    autoconf \
+    bison \
+    flex \
+    g++ \
+    gcc \
+    gettext \
+    git \
+    lhasa \
+    libgmp-dev \
+    libmpfr-dev \
+    libmpc-dev \
+    libncurses-dev \
+    make \
+    rsync \
+    texinfo\
+    wget \
+    && apt-get -y autoremove
 
-RUN apt-get -y update &&\
-    apt-get -y install make wget git gcc g++ lhasa libgmp-dev libmpfr-dev libmpc-dev flex bison gettext texinfo ncurses-dev autoconf rsync git lhasa
+ENV PATH /opt/amiga/bin:$PATH
 
-RUN git clone https://github.com/bebbo/amiga-gcc &&\
-    cd amiga-gcc &&\
-    make update &&\
-    make all -j
-
-
-
-FROM debian:10.4-slim
-
-COPY --from=builder /opt/amiga /opt/amiga
-
-RUN echo deb http://deb.debian.org/debian/ buster main >/etc/apt/sources.list &&\
-    apt-get -y update &&\
-    apt-get -y install make git
