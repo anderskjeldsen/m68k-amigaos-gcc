@@ -55,7 +55,7 @@ NDK_FOLDER_NAME_SFD  := NDK3.2/SFD
 NDK_FOLDER_NAME_LIBS := NDK3.2/lib
 else
 NDK_URL         := http://www.haage-partner.de/download/AmigaOS/NDK3.9.lha
-NDK_ARC_NAME    := NDK39
+NDK_ARC_NAME    := NDK3.9
 NDK_FOLDER_NAME := NDK_3.9/Include
 NDK_FOLDER_NAME_H    := NDK_3.9/Include/include_h
 NDK_FOLDER_NAME_I    := NDK_3.9/Include/include_i
@@ -545,7 +545,7 @@ projects/sfdc/configure:
 	@cd projects &&	git clone -b master --depth 4 $(GIT_SFDC)
 	for i in $$(find patches/sfdc/ -type f); \
 	do if [[ "$$i" == *.diff ]] ; \
-		then j=$${i:8}; patch -N "projects/$${j%.diff}" "$$i"; fi ; done
+		then j=$${i:8}; patch -N "projects/$${j%.diff}" "$$i"; retCode=$$?; [[ $$retCode -gt 1 ]] && exit $$retCode; fi ; done; exit 0
 
 # =================================================
 # vasm
@@ -736,7 +736,7 @@ projects/$(NDK_FOLDER_NAME).info: $(BUILD)/_lha_done download/$(NDK_ARC_NAME).lh
 	@touch projects/$(NDK_FOLDER_NAME).info
 
 download/$(NDK_ARC_NAME).lha:
-	@cd download && wget $(NDK_URL)
+	@cd download && wget $(NDK_URL) -O $(NDK_ARC_NAME).lha
 
 
 # =================================================
