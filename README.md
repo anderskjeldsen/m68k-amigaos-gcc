@@ -27,32 +27,26 @@ If building with a normal user, the `PREFIX` directory must be writable (default
 ### macOS
 Install Homebrew (https://brew.sh/) or any other package manager first. The compiler will be installed together with XCode. Once XCode and Homebrew are up install the required packages:
 
-`brew install bash wget make lhasa gmp mpfr libmpc flex gettext gnu_sed texinfo gcc make autoconf`
+```
+brew install bash wget make lhasa gmp mpfr libmpc flex gettext gnu-sed texinfo gcc@11 make autoconf
+```
 
 By default macOS uses an outdated version of bash. Therefore, on macOS host always pass the the SHELL=/usr/local/bin/bash parameter (or any other valid path pointing to bash), e.g.:
+
 ```
-make all SHELL=/usr/local/bin/bash
+make all SHELL=$(brew --prefix)/bin/bash
 ```
+
 On macOS it may be also necessary to point to the brew version of gcc make and autoconf, e.g.:
+
 ```
-CC=gcc-9 CXX=g++-9 gmake all SHELL=/usr/local/bin/bash
+CC=gcc-11 CXX=g++-11 gmake all SHELL=$(brew --prefix)/bin/bash
 ```
 
 **ALSO NOTE** If you want `m68k-amigaos-gdb` then you have to build it with `gcc`
 
 ### macOs on Mi1
-
-Native build on M1 Mac has proved difficult at this stage for a number of reasons. I filed (and closed) a separate issue. 
-
-We can, however, get an x86 version of the toolchain working on M1 with these steps.
-
-1. Ensure rosetta is installed. `/usr/sbin/softwareupdate --install-rosetta --agree-to-license`
-2. Ensure Xcode command line tools are installed `xcode-select --install`
-3. Install convince Homebrew to install an x86_64 version instead `arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"`.  Ensure `/usr/local/bin` is early in your path.
-4. Use the x86 homebrew to install the required packages `arch -x86_64 brew install bash wget make lhasa gmp mpfr libmpc flex gettext texinfo gcc make autoconf`
-5. `git clone git@github.com:bebbo/amiga-gcc ; cd amiga-gcc`
-6. specify x86 when building `CC=gcc-10 CXX=g++-10 SHELL=/usr/local/bin/bash arch -x86_64 gmake clean update all`. 
-7. profit!
+Native builds on M1 Macs are now directly supported.
 
 ### Windows with Cygwin
 Install cygwin via setup.exe and add wget. Then open cygwin shell and run:
@@ -139,3 +133,25 @@ m68k-amigaos-gcc test.cpp -mcrt=nix13
 ```
 
 The include files for 1.3 - which are picked up by the compiler if `-mcrt=nix13` is used - can be found at `<PREFIX>/m68k-amigaos/ndk13-include` i.E. `/opt/amiga/m68k-amigaos/ndk13-include`
+
+## Checking gcc
+
+To check the built version you may consider to run the gcc dejagnu tests. This does not cover everything but it's a start.
+The tests are using my improved version of VAMOS (downstream of https://github.com/cnvogelg/amitools) to emulate the Amiga,
+and right now not all improvements went back into the upstream.
+
+### Debian / Ubuntu
+```
+sudo apt install dejagnu
+sudo cp baseboards/* /usr/share/dejagnu/baseboards
+pip install -U git+https://github.com/bebbo/amitools.git  
+make check
+```
+
+### macOS
+```
+brew install dejagnu
+cp baseboards/* $(brew --prefix)/opt/dejagnu/share/dejagnu/baseboards
+pip install -U  git+https://github.com/bebbo/amitools.git  
+make check
+```
