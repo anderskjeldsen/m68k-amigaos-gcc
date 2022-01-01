@@ -67,7 +67,7 @@ def buildStep(DOCKER_ROOT, DOCKERIMAGE, DOCKERTAG, DOCKERFILE, BUILD_NEXT) {
 		}
 
 		if (!BUILD_NEXT.equals('')) {
-			build "${BUILD_NEXT}/${env.BRANCH_NAME}";
+			build job: "${BUILD_NEXT}/${env.BRANCH_NAME}", wait: false, parameters: [string(name: 'BUILD_IMAGE', value: String.valueOf(DOCKERTAG))]
 		}
 	} catch(err) {
 		slackSend color: "danger", channel: "#jenkins", message: "Build Failed: ${fixed_job_name} #${env.BUILD_NUMBER} Target: ${DOCKER_ROOT}/${DOCKERIMAGE}:${tag} (<${env.BUILD_URL}|Open>)"
