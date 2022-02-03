@@ -7,7 +7,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt install -y lhasa && \
     rm -rf /var/lib/apt/lists/* && \
     make update PREFIX=/opt/m68k-amigaos && \
-    make -j $(nproc) NDK=3.2 all PREFIX=/opt/m68k-amigaos && \
+    make -j $(nproc) all PREFIX=/opt/m68k-amigaos && \
     make -j $(nproc) sdk=ahi PREFIX=/opt/m68k-amigaos && \
     make -j $(nproc) sdk=camd PREFIX=/opt/m68k-amigaos && \
     make -j $(nproc) sdk=cgx PREFIX=/opt/m68k-amigaos && \
