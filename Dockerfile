@@ -22,6 +22,10 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     make -j $(nproc) sdk=render PREFIX=/opt/m68k-amigaos && \
     make -j $(nproc) sdk=warp3d PREFIX=/opt/m68k-amigaos && \
     make -j $(nproc) all-sdk PREFIX=/opt/m68k-amigaos && \
+    wget https://raw.githubusercontent.com/aros-development-team/AROS/master/compiler/include/devices/newstyle.h -O newstyle.h && \
+    wget https://dl.amigadev.com/newstyle.diff -O newstyle.diff && \
+    patch --ignore-whitespace < newstyle.diff && \
+    mv -fv newstyle.h /opt/m68k-amigaos/m68k-amigaos/ndk-include/devices/ && \
     cd / && \
     rm -rf /root/amiga-gcc && \
     apt-get purge -y \
