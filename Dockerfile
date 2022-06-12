@@ -26,7 +26,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     wget https://raw.githubusercontent.com/aros-development-team/AROS/master/compiler/include/devices/sana2.h -O sana2.h && \
     wget https://dl.amigadev.com/newstyle.diff -O newstyle.diff && \
     patch --ignore-whitespace < newstyle.diff && \
-    mv -fv {newstyle.h,sana2.h} /opt/m68k-amigaos/m68k-amigaos/ndk-include/devices/ && \
+    mv -fv newstyle.h sana2.h /opt/m68k-amigaos/m68k-amigaos/ndk-include/devices/ && \
     cd / && \
     rm -rf /root/amiga-gcc && \
     apt-get purge -y \
