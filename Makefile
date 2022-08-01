@@ -8,7 +8,7 @@ include disable_implicite_rules.mk
 # =================================================
 # variables
 # =================================================
-SHELL = /bin/bash
+$(eval SHELL = $(shell which bash 2>/dev/null) ) 
 
 PREFIX ?= /opt/amiga
 export PATH := $(PREFIX)/bin:$(PATH)
@@ -25,6 +25,8 @@ GCC_VERSION ?= $(shell cat 2>/dev/null $(PROJECTS)/gcc/gcc/BASE-VER)
 
 ifeq ($(UNAME_S), Darwin)
 	SED := gsed
+else ifeq ($(UNAME_S), FreeBSD)
+	SED := gsed
 else
 	SED := sed
 endif
@@ -38,8 +40,8 @@ $(foreach modu,$(modules),$(eval $(modu)_URL=$(call get_url,$(modu))))
 $(foreach modu,$(modules),$(eval $(modu)_BRANCH=$(call get_branch,$(modu))))
 
 ifeq ($(NDK),3.2)
-NDK_URL              := http://aminet.net/dev/misc/NDK3.2R3.lha
-NDK_ARC_NAME         := NDK3.2R3
+NDK_URL              := http://aminet.net/dev/misc/NDK3.2.lha
+NDK_ARC_NAME         := NDK3.2
 NDK_FOLDER_NAME      := NDK3.2
 NDK_FOLDER_NAME_H    := NDK3.2/Include_H
 NDK_FOLDER_NAME_I    := NDK3.2/Include_I
@@ -59,7 +61,7 @@ endif
 
 CFLAGS ?= -Os
 CXXFLAGS ?= $(CFLAGS)
-CFLAGS_FOR_TARGET ?= -Os -fomit-frame-pointer 
+CFLAGS_FOR_TARGET ?= -Os -fomit-frame-pointer
 CXXFLAGS_FOR_TARGET ?= $(CFLAGS_FOR_TARGET) -fno-exceptions -fno-rtti
 
 E:=CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CFLAGS_FOR_BUILD="$(CFLAGS)" CXXFLAGS_FOR_BUILD="$(CXXFLAGS)"  CFLAGS_FOR_TARGET="$(CFLAGS_FOR_TARGET)" CXXFLAGS_FOR_TARGET="$(CFLAGS_FOR_TARGET)"
@@ -68,7 +70,7 @@ THREADS ?= no
 
 # =================================================
 # determine exe extension for cygwin
-$(eval MYMAKE = $(shell which make 2>/dev/null) )
+$(eval MYMAKE = $(shell which $(MAKE) 2>/dev/null) )
 $(eval MYMAKEEXE = $(shell which "$(MYMAKE:%=%.exe)" 2>/dev/null) )
 EXEEXT:=$(MYMAKEEXE:%=.exe)
 
@@ -303,7 +305,7 @@ update-libpthread: $(PROJECTS)/aros-stuff/pthreads/Makefile
 	@cd $(PROJECTS)/aros-stuff && git pull
 
 update-ndk: $(DOWNLOAD)/$(NDK_ARC_NAME).lha
-	make $(PROJECTS)/$(NDK_FOLDER_NAME).info
+	$(MAKE) $(PROJECTS)/$(NDK_FOLDER_NAME).info
 
 update-newlib: $(PROJECTS)/newlib-cygwin/newlib/configure
 	@cd $(PROJECTS)/newlib-cygwin && git pull
@@ -410,7 +412,7 @@ CONFIG_GCC = --prefix=$(PREFIX) --target=m68k-amigaos --enable-languages=c,c++,o
 	--with-headers=$(PROJECTS)/newlib-cygwin/newlib/libc/sys/amigaos/include/ --disable-shared --enable-threads=$(THREADS) \
 	--with-stage1-ldflags="-dynamic-libgcc -dynamic-libstdc++" --with-boot-ldflags="-dynamic-libgcc -dynamic-libstdc++"	
 
-# OSX : libs added by the command brew install gmp mpfr libmpc
+# FreeBSD, OSX : libs added by the command brew install gmp mpfr libmpc
 ifeq (Darwin, $(findstring Darwin, $(UNAME_S)))
 	BREW_PREFIX := $$(brew --prefix)
 	CONFIG_GCC += --with-gmp=$(BREW_PREFIX) \
@@ -418,6 +420,12 @@ ifeq (Darwin, $(findstring Darwin, $(UNAME_S)))
 		--with-mpc=$(BREW_PREFIX)
 endif
 
+ifeq (FreeBSD, $(findstring FreeBSD, $(UNAME_S)))
+	PORTS_PREFIX?=/usr/local
+	CONFIG_GCC += --with-gmp=$(PORTS_PREFIX) \
+		--with-mpfr=$(PORTS_PREFIX) \
+		--with-mpc=$(PORTS_PREFIX)
+endif
 
 GCC_CMD := m68k-amigaos-c++ m68k-amigaos-g++ m68k-amigaos-gcc-$(GCC_VERSION) m68k-amigaos-gcc-nm \
 	m68k-amigaos-gcov m68k-amigaos-gcov-tool m68k-amigaos-cpp m68k-amigaos-gcc m68k-amigaos-gcc-ar \
@@ -714,7 +722,9 @@ $(BUILD)/ndk-include_proto: $(PROJECTS)/$(NDK_FOLDER_NAME).info
 	@echo "done" >$@
 
 $(PROJECTS)/$(NDK_FOLDER_NAME).info: $(BUILD)/_lha_done $(DOWNLOAD)/$(NDK_ARC_NAME).lha $(shell find 2>/dev/null patches/$(NDK_FOLDER_NAME)/ -type f)
-	$(L0)"unpack ndk"$(L1) cd $(PROJECTS) && lha xf $(DOWNLOAD)/$(NDK_ARC_NAME).lha $(L2)
+	$(L0)"unpack ndk"$(L1) cd $(PROJECTS) && if [[ $(NDK_ARC_NAME) == "NDK3.2" ]] ; \
+	   then mkdir NDK3.2 ; cd NDK3.2 ; fi ; \
+	   lha xf $(DOWNLOAD)/$(NDK_ARC_NAME).lha $(L2)
 	@touch -t 0001010000 $(DOWNLOAD)/$(NDK_ARC_NAME).lha
 	$(L0)"patch ndk"$(L1) for i in $$(find patches/$(NDK_FOLDER_NAME)/ -type f); do \
 	   if [[ "$$i" == *.diff ]] ; \
@@ -928,7 +938,7 @@ $(BUILD)/newlib/newlib/libc.a: $(BUILD)/newlib/newlib/Makefile $(NEWLIB_FILES)
 $(BUILD)/newlib/newlib/Makefile: $(PROJECTS)/newlib-cygwin/newlib/configure $(BUILD)/ndk-include_ndk $(BUILD)/gcc/_done
 	@mkdir -p $(BUILD)/newlib/newlib
 	@if [ ! -f "$(BUILD)/newlib/newlib/Makefile" ]; then \
-	$(L00)"configure newlib"$(L1) cd $(BUILD)/newlib/newlib && $(NEWLIB_CONFIG) CFLAGS="$(CFLAGS_FOR_TARGET)" CXXFLAGS="$(CXXFLAGS_FOR_TARGET)" $(PROJECTS)/newlib-cygwin/newlib/configure --host=m68k-amigaos --prefix=$(PREFIX) --enable-newlib-io-long-long --enable-newlib-io-c99-formats --enable-newlib-reent-small --enable-newlib-mb --enable-newlib-long-time_t $(L2) \
+	$(L00)"configure newlib"$(L1) cd $(BUILD)/newlib/newlib && $(NEWLIB_CONFIG) CFLAGS="$(CFLAGS_FOR_TARGET)" CC_FOR_BUILD="$(CC)" CXXFLAGS="$(CXXFLAGS_FOR_TARGET)" $(PROJECTS)/newlib-cygwin/newlib/configure --host=m68k-amigaos --prefix=$(PREFIX) --enable-newlib-io-long-long --enable-newlib-io-c99-formats --enable-newlib-reent-small --enable-newlib-mb --enable-newlib-long-time_t $(L2) \
 	; else touch "$(BUILD)/newlib/newlib/Makefile"; fi
 
 $(PROJECTS)/newlib-cygwin/newlib/configure:
