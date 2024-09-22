@@ -66,9 +66,54 @@ def buildStep(DOCKER_ROOT, DOCKERIMAGE, DOCKERTAG, DOCKERFILE, BUILD_NEXT, BUILD
 			}
 		}
 
-		if (!BUILD_NEXT.equals('')) {
-			build job: "${BUILD_NEXT}/${env.BRANCH_NAME}", wait: true, parameters: [string(name: 'BUILD_IMAGE', value: String.valueOf(BUILD_PARAM))]
+	} catch(err) {
+		slackSend color: "danger", channel: "#jenkins", message: "Build Failed: ${fixed_job_name} #${env.BUILD_NUMBER} Target: ${DOCKER_ROOT}/${DOCKERIMAGE}:${tag} (<${env.BUILD_URL}|Open>)"
+		currentBuild.result = 'FAILURE'
+		notify("Build Failed: ${fixed_job_name} #${env.BUILD_NUMBER} Target: ${DOCKER_ROOT}/${DOCKERIMAGE}:${tag}")
+		throw err
+	}
+}
+
+def buildManifest(DOCKER_ROOT, DOCKERIMAGE, DOCKERTAG, DOCKERFILE, PLATFORMS, BUILD_NEXT) {
+	def fixed_job_name = env.JOB_NAME.replace('%2F','/')
+	try {
+		checkout scm;
+
+		def buildenv = '';
+		def tag = '';
+		if (env.BRANCH_NAME.equals('master')) {
+			buildenv = 'production';
+			tag = "${DOCKERTAG}";
+		} else if (env.BRANCH_NAME.equals('dev')) {
+			buildenv = 'development';
+			tag = "${DOCKERTAG}-dev";
+		} else {
+			throw new Exception("Invalid branch, stopping build!");
 		}
+
+		docker.withRegistry("https://index.docker.io/v1/", "dockerhub") {
+			stage("Building ${DOCKERIMAGE}:${tag} manifest...") {
+				sh('docker version');
+				def platformsString = "";
+				PLATFORMS.each { p ->
+					sh("docker pull ${DOCKER_ROOT}/${DOCKERIMAGE}:${tag}_${p}");
+					platformsString = "${platformsString} ${DOCKER_ROOT}/${DOCKERIMAGE}:${tag}_${p}"
+				}
+				
+				sh("docker manifest create ${DOCKER_ROOT}/${DOCKERIMAGE}:${tag} ${platformsString}");
+				sh("docker manifest push ${DOCKER_ROOT}/${DOCKERIMAGE}:${tag}");
+			}
+		}
+
+		def branches = [:]
+
+		BUILD_NEXT.each { v ->
+			branches["Build ${v}"] = { 
+				build "${v}/${env.BRANCH_NAME}";
+			}
+		}
+
+		//parallel branches; // DISABLE FOR NOW
 	} catch(err) {
 		slackSend color: "danger", channel: "#jenkins", message: "Build Failed: ${fixed_job_name} #${env.BUILD_NUMBER} Target: ${DOCKER_ROOT}/${DOCKERIMAGE}:${tag} (<${env.BUILD_URL}|Open>)"
 		currentBuild.result = 'FAILURE'
@@ -88,9 +133,25 @@ node('master') {
 	def project = readJSON file: "JenkinsEnv.json";
 
 	project.builds.each { v ->
-		branches["Build ${v.DockerRoot}/${v.DockerImage}:${v.DockerTag}"] = { 
-			node {
-				buildStep(v.DockerRoot, v.DockerImage, v.DockerTag, v.Dockerfile, v.BuildIfSuccessful, v.BuildParam)
+		branches["Build ${v.DockerRoot}/${v.DockerImage}:${v.DockerTag}"] = {
+			def platforms = [:];
+
+			v.Platforms.each { p -> 
+				platforms["Build ${v.DockerRoot}/${v.DockerImage}:${v.DockerTag}_${p}"] = {
+					stage("Build ${p} version") {
+						node(p) {
+							buildStep(v.DockerRoot, v.DockerImage, "${v.DockerTag}_${p}", v.Dockerfile, [], v.BuildParam)
+						}
+					}
+				}
+			};
+
+			parallel platforms;
+
+			stage('Build multi-arch manifest') {
+				node() {
+					buildManifest(v.DockerRoot, v.DockerImage, v.DockerTag, v.Dockerfile, v.Platforms, v.BuildIfSuccessful)
+				}
 			}
 		}
 	}
