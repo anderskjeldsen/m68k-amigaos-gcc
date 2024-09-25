@@ -74,7 +74,7 @@ def buildStep(DOCKER_ROOT, DOCKERIMAGE, DOCKERTAG, DOCKERFILE, BUILD_NEXT, BUILD
 	}
 }
 
-def buildManifest(DOCKER_ROOT, DOCKERIMAGE, DOCKERTAG, DOCKERFILE, PLATFORMS, BUILD_NEXT) {
+def buildManifest(DOCKER_ROOT, DOCKERIMAGE, DOCKERTAG, DOCKERFILE, PLATFORMS, BUILD_NEXT, BUILD_PARAM) {
 	def fixed_job_name = env.JOB_NAME.replace('%2F','/')
 	try {
 		checkout scm;
@@ -109,7 +109,7 @@ def buildManifest(DOCKER_ROOT, DOCKERIMAGE, DOCKERTAG, DOCKERFILE, PLATFORMS, BU
 
 		BUILD_NEXT.each { v ->
 			branches["Build ${v}"] = { 
-				build "${v}/${env.BRANCH_NAME}";
+				build(job: "${v}/${env.BRANCH_NAME}", wait: true, parameters: [string(name: 'BUILD_IMAGE', value: String.valueOf(BUILD_PARAM))]);
 			}
 		}
 
@@ -140,7 +140,7 @@ node('master') {
 				platforms["Build ${v.DockerRoot}/${v.DockerImage}:${v.DockerTag}_${p}"] = {
 					stage("Build ${p} version") {
 						node(p) {
-							buildStep(v.DockerRoot, v.DockerImage, "${v.DockerTag}_${p}", v.Dockerfile, [], v.BuildParam)
+							buildStep(v.DockerRoot, v.DockerImage, "${v.DockerTag}_${p}", v.Dockerfile, [], v.BuildParam);
 						}
 					}
 				}
@@ -150,7 +150,7 @@ node('master') {
 
 			stage('Build multi-arch manifest') {
 				node() {
-					buildManifest(v.DockerRoot, v.DockerImage, v.DockerTag, v.Dockerfile, v.Platforms, v.BuildIfSuccessful)
+					buildManifest(v.DockerRoot, v.DockerImage, v.DockerTag, v.Dockerfile, v.Platforms, v.BuildIfSuccessful, v.BuildParam);
 				}
 			}
 		}
