@@ -251,6 +251,7 @@ make all -j20
 * `amiga6`: The default branch providing gcc-6.5.0b with a lot of hacks^^
 * `amiga13.1': gcc-13.1.0  supports register parameters
 * `amiga13.2': gcc-13.2.0  supports register parameters
+* `amiga13.3': gcc-13.3.0  supports register parameters
 * `68080regs`: gcc-6.5.0b supporting the B0-B7/E0-E7 AMMX registers of the Apollo 68080 (experimental)
  
 
