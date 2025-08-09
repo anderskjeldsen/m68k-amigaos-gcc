@@ -120,34 +120,6 @@ L1 = ;(
 L2 = )
 endif
 
-
-# =================================================
-# ensure lib directories under PREFIX
-# =================================================
-
-PREFIX_LIB=${PREFIX}/lib
-
-PREFIX_LIB_FOLDERS := \
-	${PREFIX_LIB}/libm020:-m68020 \
-	${PREFIX_LIB}/libm020/libm881:-m68020_-m68881 \
-	${PREFIX_LIB}/libb:-fbaserel \
-	${PREFIX_LIB}/libb/libm020:-fbaserel_-m68020 \
-	${PREFIX_LIB}/libb/libm020/libm881:-fbaserel_-m68020_-m68881 \
-	${PREFIX_LIB}/libb32/libm020:-fbaserel32_-m68020 \
-	${PREFIX_LIB}/libb32/libm020/libm881:-fbaserel32_-m68020_-m68881
-
-# Strip the flags and deduplicate paths
-PREFIX_DIRS := $(sort $(foreach T,$(PREFIX_LIB_FOLDERS),$(word 1,$(subst :, ,$(T)))))
-
-.PHONY: ensure-prefix-dirs
-ensure-prefix-dirs:
-	@echo "Creating prefix lib variant directories..."
-	@set -e; \
-	for d in $(PREFIX_DIRS); do \
-		mkdir -p "$$d"; \
-	done
-
-
 # =================================================
 # download files
 # =================================================
@@ -1178,6 +1150,32 @@ branch:
 		echo "$(mod) $(branch) does NOT exist!"; \
 	fi
 
+
+# =================================================
+# ensure lib directories under PREFIX
+# =================================================
+
+PREFIX_LIB=${PREFIX}/lib
+
+PREFIX_LIB_FOLDERS = \
+	${PREFIX_LIB}/libm020:-m68020 \
+	${PREFIX_LIB}/libm020/libm881:-m68020_-m68881 \
+	${PREFIX_LIB}/libb:-fbaserel \
+	${PREFIX_LIB}/libb/libm020:-fbaserel_-m68020 \
+	${PREFIX_LIB}/libb/libm020/libm881:-fbaserel_-m68020_-m68881 \
+	${PREFIX_LIB}/libb32/libm020:-fbaserel32_-m68020 \
+	${PREFIX_LIB}/libb32/libm020/libm881:-fbaserel32_-m68020_-m68881
+
+# Strip the flags and deduplicate paths
+PREFIX_DIRS := $(sort $(foreach T,$(PREFIX_LIB_FOLDERS),$(word 1,$(subst :, ,$(T)))))
+
+.PHONY: ensure-prefix-dirs
+ensure-prefix-dirs:
+	@echo "Creating prefix lib variant directories..."
+	@set -e; \
+	for d in $(PREFIX_DIRS); do \
+		mkdir -p "$$d"; \
+	done
 
 # =================================================
 # multilib support
