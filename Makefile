@@ -120,6 +120,32 @@ L1 = ;(
 L2 = )
 endif
 
+
+# =================================================
+# ensure lib directories under PREFIX
+# =================================================
+
+PREFIX_LIB_FOLDERS := \
+	${PREFIX}/libm020:-m68020 \
+	${PREFIX}/libm020/libm881:-m68020_-m68881 \
+	${PREFIX}/libb:-fbaserel \
+	${PREFIX}/libb/libm020:-fbaserel_-m68020 \
+	${PREFIX}/libb/libm020/libm881:-fbaserel_-m68020_-m68881 \
+	${PREFIX}/libb32/libm020:-fbaserel32_-m68020 \
+	${PREFIX}/libb32/libm020/libm881:-fbaserel32_-m68020_-m68881
+
+# Strip the flags and deduplicate paths
+PREFIX_DIRS := $(sort $(foreach T,$(PREFIX_LIB_FOLDERS),$(word 1,$(subst :, ,$(T)))))
+
+.PHONY: ensure-prefix-dirs
+ensure-prefix-dirs:
+	@echo "Creating prefix lib variant directories..."
+	@set -e; \
+	for d in $(PREFIX_DIRS); do \
+		mkdir -p "$$d"; \
+	done
+
+
 # =================================================
 # download files
 # =================================================
@@ -179,8 +205,8 @@ help:
 # =================================================
 # all
 # =================================================
-.PHONY: all gcc gdb gprof binutils fd2sfd fd2pragma ira sfdc vasm libnix ixemul libgcc clib2 libdebug libpthread ndk ndk13 min libnix4.library
-all: gcc binutils gdb gprof fd2sfd fd2pragma ira sfdc vasm libnix ixemul libgcc clib2 libdebug libpthread ndk ndk13 libSDL12 libnix4.library
+.PHONY: all gcc gdb gprof binutils fd2sfd fd2pragma ira sfdc vasm libnix ixemul libgcc clib2 libdebug libpthread ndk ndk13 min libnix4.library ensure-prefix-dirs
+all: gcc binutils gdb gprof fd2sfd fd2pragma ira sfdc vasm libnix ixemul libgcc clib2 libdebug libpthread ndk ndk13 libSDL12 libnix4.library ensure-prefix-dirs
 
 min: binutils gcc gprof libnix libgcc libnix4.library
 
