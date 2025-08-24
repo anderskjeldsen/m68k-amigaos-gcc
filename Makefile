@@ -317,7 +317,7 @@ update: update-gcc update-binutils update-fd2sfd update-fd2pragma update-ira upd
 	+$(MAKE) -B $(DOWNLOAD)/$(LIBFREETYPE).tar.xz
 	+$(MAKE) -B $(DOWNLOAD)/$(LIBSDLMIXER).tar.gz
 	+$(MAKE) -B $(DOWNLOAD)/$(LIBSDLTTF).tar.gz
-	+$(MAKE) -B $(DOWNLOAD)/AmiSSL-SDK.lha
+	+$(MAKE) -B $(DOWNLOAD)/${AMISSL}.lha
 
 update-gcc: $(PROJECTS)/gcc/configure
 	@cd $(PROJECTS)/gcc && git pull || (export DEPTH=16; while true; do echo "trying depth=$$DEPTH"; git pull --depth $$DEPTH && break; export DEPTH=$$(($$DEPTH+$$DEPTH));done)
