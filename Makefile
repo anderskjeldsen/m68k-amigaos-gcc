@@ -317,6 +317,7 @@ update: update-gcc update-binutils update-fd2sfd update-fd2pragma update-ira upd
 	+$(MAKE) -B $(DOWNLOAD)/$(LIBFREETYPE).tar.xz
 	+$(MAKE) -B $(DOWNLOAD)/$(LIBSDLMIXER).tar.gz
 	+$(MAKE) -B $(DOWNLOAD)/$(LIBSDLTTF).tar.gz
+	+$(MAKE) -B $(DOWNLOAD)/AmiSSL-SDK.lha
 
 update-gcc: $(PROJECTS)/gcc/configure
 	@cd $(PROJECTS)/gcc && git pull || (export DEPTH=16; while true; do echo "trying depth=$$DEPTH"; git pull --depth $$DEPTH && break; export DEPTH=$$(($$DEPTH+$$DEPTH));done)
@@ -1443,3 +1444,26 @@ $(PROJECTS)/$(LIBSDLTTF)/configure: $(DOWNLOAD)/$(LIBSDLTTF).tar.gz $(BUILD)/lib
 
 $(DOWNLOAD)/$(LIBSDLTTF).tar.gz:
 	$(call get-file,$(LIBSDLTTF),https://github.com/SDL-mirror/SDL_ttf/archive/SDL-1.2.tar.gz,$(LIBSDLTTF).tar.gz)
+
+# =================================================
+# AmiSSL
+# =================================================
+# $(PROJECTS)/AmiSSL-SDK/configure:
+#	@cd $(PROJECTS) &&	git clone -b $(ixemul_BRANCH) $(ixemul_URL)
+
+AMISSL=AmiSSL-v5-SDK
+
+.PHONY: amissl
+amissl:	$(PREFIX)/$(TARGET)/AmiSSL/lib/amisslstubs.a
+
+$(PREFIX)/$(TARGET)/AmiSSL/lib/amisslstubs.a: $(BUILD)/AmiSSL-SDK/AmiSSL/Developer/lib/amisslstubs.a
+	@mkdir -p $(PREFIX)/$(TARGET)/amissl
+	$(L0)"installing AmiSSL-SDK"$(L1) rsync -a --no-group $(BUILD)/AmiSSL-SDK/AmiSSL/Developer/* $(PREFIX)/$(TARGET)/AmiSSL/ $(L2)
+
+$(BUILD)/AmiSSL-SDK/AmiSSL/Developer/lib/amisslstubs.a: $(DOWNLOAD)/${AMISSL}.lha
+	@mkdir -p $(BUILD)/AmiSSL-SDK
+	$(L0)"unpacking ${AMISSL}.lha"$(L1) cd $(BUILD)/AmiSSL-SDK && lha xf $(DOWNLOAD)/${AMISSL}.lha $(L2)
+
+$(DOWNLOAD)/${AMISSL}.lha:
+	@echo "downloading https://aminet.net/util/libs/${AMISSL}.lha"
+	$(call get-file,${AMISSL},https://aminet.net/util/libs/${AMISSL}.lha,${AMISSL}.lha)
