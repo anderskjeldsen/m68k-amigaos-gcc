@@ -1332,9 +1332,7 @@ clean-libSDL12:
 
 libSDL12: $(BUILD)/libSDL12/_done
 
-$(BUILD)/libSDL12/_done: $(BUILD)/libSDL12/Makefile
-	$(MAKE) sdk=ahi
-	$(MAKE) sdk=cgx
+$(BUILD)/libSDL12/_done: $(BUILD)/libSDL12/Makefile ahi cgx
 	$(L0)"make libSDL12"$(L1) cd $(BUILD)/libSDL12 && CFLAGS="$(CFLAGS_FOR_TARGET)" $(MAKE) -f Makefile $(CONFIG_LIBSDL12) $(L2)
 	$(L0)"install libSDL12"$(L1) cp $(BUILD)/libSDL12/libSDL.a $(PREFIX)/lib/ $(L2)
 	@mkdir -p $(PREFIX)/include/GL
