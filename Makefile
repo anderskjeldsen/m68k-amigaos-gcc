@@ -1479,3 +1479,24 @@ $(BUILD)/AmiSSL-SDK/AmiSSL/Developer/lib/amisslstubs.a: $(DOWNLOAD)/${AMISSL}.lh
 $(DOWNLOAD)/${AMISSL}.lha:
 	@echo "downloading https://aminet.net/util/libs/${AMISSL}.lha"
 	$(call get-file,${AMISSL},https://aminet.net/util/libs/${AMISSL}.lha,${AMISSL}.lha)
+
+# =================================================
+# MUI 3.8 developer SDK (from Aminet)
+# =================================================
+
+MUI38=mui38dev
+
+.PHONY: mui38
+mui38:	$(PREFIX)/$(TARGET)/MUI/C/Lib/libmui.a
+
+$(PREFIX)/$(TARGET)/MUI/C/Lib/libmui.a: $(BUILD)/mui38dev/MUI/Developer/C/Lib/libmui.a
+	@mkdir -p $(PREFIX)/$(TARGET)/MUI
+	$(L0)"installing MUI 3.8 SDK"$(L1) rsync -a --no-group $(BUILD)/mui38dev/MUI/Developer/* $(PREFIX)/$(TARGET)/MUI/ $(L2)
+
+$(BUILD)/mui38dev/MUI/Developer/C/Lib/libmui.a: $(DOWNLOAD)/${MUI38}.lha
+	@mkdir -p $(BUILD)/mui38dev
+	$(L0)"unpacking ${MUI38}.lha"$(L1) cd $(BUILD)/mui38dev && lha xf $(DOWNLOAD)/${MUI38}.lha $(L2)
+
+$(DOWNLOAD)/${MUI38}.lha:
+	@echo "downloading https://aminet.net/dev/mui/${MUI38}.lha"
+	$(call get-file,${MUI38},https://aminet.net/dev/mui/${MUI38}.lha,${MUI38}.lha)
