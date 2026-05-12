@@ -1481,22 +1481,29 @@ $(DOWNLOAD)/${AMISSL}.lha:
 	$(call get-file,${AMISSL},https://aminet.net/util/libs/${AMISSL}.lha,${AMISSL}.lha)
 
 # =================================================
-# MUI 3.8 developer SDK (from Aminet)
+# MUI 5.0 OS3 developer SDK (from github.com/amiga-mui/muidev)
 # =================================================
+# This is the actively-maintained MUI release. Unlike Aminet's mui38dev.lha
+# it ships a gcc-format libmui.a, modern include/ layout (clib/, inline/,
+# inline4/, interfaces/, libraries/, mui/, defines/), and SFDs for fd2sfd.
+# The archive's top-level layout is SDK/MUI/* (developer kit) plus
+# MUI/Demos/* (prebuilt demo binaries we don't install).
 
-MUI38=mui38dev
+MUI=MUI-5.0-20210831-os3
 
-.PHONY: mui38
-mui38:	$(PREFIX)/$(TARGET)/MUI/C/Lib/libmui.a
+.PHONY: mui clean-mui
+mui:	$(BUILD)/mui/_done
 
-$(PREFIX)/$(TARGET)/MUI/C/Lib/libmui.a: $(BUILD)/mui38dev/MUI/Developer/C/Lib/libmui.a
+clean-mui:
+	rm -rf $(BUILD)/mui
+
+$(BUILD)/mui/_done: $(DOWNLOAD)/$(MUI).lha
+	@mkdir -p $(BUILD)/mui
+	$(L0)"unpacking $(MUI).lha"$(L1) cd $(BUILD)/mui && lha xf $(DOWNLOAD)/$(MUI).lha; true $(L2)
 	@mkdir -p $(PREFIX)/$(TARGET)/MUI
-	$(L0)"installing MUI 3.8 SDK"$(L1) rsync -a --no-group $(BUILD)/mui38dev/MUI/Developer/* $(PREFIX)/$(TARGET)/MUI/ $(L2)
+	$(L0)"installing MUI 5.0 SDK"$(L1) rsync -a --no-group $(BUILD)/mui/SDK/MUI/ $(PREFIX)/$(TARGET)/MUI/ $(L2)
+	@touch $@
 
-$(BUILD)/mui38dev/MUI/Developer/C/Lib/libmui.a: $(DOWNLOAD)/${MUI38}.lha
-	@mkdir -p $(BUILD)/mui38dev
-	$(L0)"unpacking ${MUI38}.lha"$(L1) cd $(BUILD)/mui38dev && lha xf $(DOWNLOAD)/${MUI38}.lha $(L2)
-
-$(DOWNLOAD)/${MUI38}.lha:
-	@echo "downloading https://aminet.net/dev/mui/${MUI38}.lha"
-	$(call get-file,${MUI38},https://aminet.net/dev/mui/${MUI38}.lha,${MUI38}.lha)
+$(DOWNLOAD)/$(MUI).lha:
+	@echo "downloading https://github.com/amiga-mui/muidev/releases/download/MUI-5.0-20210831/$(MUI).lha"
+	$(call get-file,$(MUI),https://github.com/amiga-mui/muidev/releases/download/MUI-5.0-20210831/$(MUI).lha,$(MUI).lha)
