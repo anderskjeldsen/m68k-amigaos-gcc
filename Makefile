@@ -552,6 +552,12 @@ endif
 
 $(PROJECTS)/gcc/configure:
 	@cd $(PROJECTS) &&	git clone -b $(gcc_BRANCH) --depth 16 $(gcc_URL)
+	@# Apply local gcc fixes (see patches/README or per-patch comment).
+	@for p in $(CURDIR)/patches/gcc-*.patch; do \
+		[ -f "$$p" ] || continue; \
+		echo "applying $$p"; \
+		patch -d $(PROJECTS)/gcc -p1 < "$$p" || exit 1; \
+	done
 
 # =================================================
 # fd2sfd
