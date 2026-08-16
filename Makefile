@@ -55,8 +55,18 @@ $(shell  [ ! -f .repos ] && cp default-repos .repos)
 modules := $(shell cat .repos | $(SED) -e 's/[[:blank:]]\+/ /g' | cut -d' ' -f1)
 get_url = $(shell grep $(1) .repos | $(SED) -e 's/[[:blank:]]\+/ /g' | cut -d' ' -f2)
 get_branch = $(shell grep $(1) .repos | $(SED) -e 's/[[:blank:]]\+/ /g' | cut -d' ' -f3)
+# optional 4th column in .repos/default-repos = commit to PIN the checkout to.
+# Without it every image rebuild silently takes upstream HEAD of the branch.
+# gcc is pinned to 3d2a571d (2026-06-01): the last commit before bebbo's July
+# 2026 rework of the bbb-opts auto-increment pass (da7ad7f0 07-16, 1b029cd9
+# 07-31), suspected origin of the "post-increment base reuse" miscompile that
+# broke AmLang HashMap slot stores at -O2/-O3 (workaround: -fbbb=abcefhlmnprsz0).
+# Bump deliberately, after re-running the AmLang m68k repro (json-m68k-repro).
+# NOTE: .repos has NO comment support (grep/cut parsing) - keep notes here.
+get_commit = $(shell grep $(1) .repos | $(SED) -e 's/[[:blank:]]\+/ /g' | cut -d' ' -f4)
 $(foreach modu,$(modules),$(eval $(modu)_URL=$(call get_url,$(modu))))
 $(foreach modu,$(modules),$(eval $(modu)_BRANCH=$(call get_branch,$(modu))))
+$(foreach modu,$(modules),$(eval $(modu)_COMMIT=$(call get_commit,$(modu))))
 
 ifneq ($(NDK),3.9)
 NDK_URL              := http://aminet.net/dev/misc/NDK3.2.lha
@@ -340,7 +350,12 @@ update: update-gcc update-binutils update-fd2sfd update-fd2pragma update-ira upd
 	+$(MAKE) -B $(DOWNLOAD)/$(MUI).lha
 
 update-gcc: $(PROJECTS)/gcc/configure
+ifneq ($(strip $(gcc_COMMIT)),)
+	@# pinned: never move past the pinned commit
+	@cd $(PROJECTS)/gcc && git fetch --depth 1 origin $(gcc_COMMIT) && git checkout -q $(gcc_COMMIT) && echo "gcc pinned at $(gcc_COMMIT)"
+else
 	@cd $(PROJECTS)/gcc && git pull || (export DEPTH=16; while true; do echo "trying depth=$$DEPTH"; git pull --depth $$DEPTH && break; export DEPTH=$$(($$DEPTH+$$DEPTH));done)
+endif
 
 update-binutils: $(PROJECTS)/binutils/configure
 	@cd $(PROJECTS)/binutils && git pull || (export DEPTH=16; while true; do echo "trying depth=$$DEPTH"; git pull --depth $$DEPTH && break; export DEPTH=$$(($$DEPTH+$$DEPTH));done)
@@ -552,6 +567,10 @@ endif
 
 $(PROJECTS)/gcc/configure:
 	@cd $(PROJECTS) &&	git clone -b $(gcc_BRANCH) --depth 16 $(gcc_URL)
+ifneq ($(strip $(gcc_COMMIT)),)
+	@# pinned commit (4th column in .repos); GitHub serves arbitrary shas to fetch
+	@cd $(PROJECTS)/gcc && git fetch --depth 1 origin $(gcc_COMMIT) && git checkout -q $(gcc_COMMIT) && echo "gcc pinned at $(gcc_COMMIT)"
+endif
 	@# Apply local gcc fixes (see patches/README or per-patch comment).
 	@for p in $(CURDIR)/patches/gcc-*.patch; do \
 		[ -f "$$p" ] || continue; \
