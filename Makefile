@@ -200,6 +200,11 @@ endef
 
 # =================================================
 
+# `x` must stay the default goal: `$(MAKE) sdk=<name>` (used by libSDL12 for
+# ahi/cgx) relies on it. ensure-prefix-dirs is defined earlier in the file and
+# silently became the default, so sdk installs were skipped -> libSDL12 failed
+# on devices/ahi.h.
+.DEFAULT_GOAL := x
 .PHONY: x init
 x:
 	@if [ "$(sdk)" == "" ]; then \
